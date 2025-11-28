@@ -16,6 +16,8 @@
   --border: #e2e8f0;
   --input: #e2e8f0;
   --ring: #3b82f6;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
 }
 
 @theme inline {
@@ -34,6 +36,8 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -55,6 +59,8 @@
     --border: #1e293b;
     --input: #1e293b;
     --ring: #3b82f6;
+    --destructive: #ef4444;
+    --destructive-foreground: #ffffff;
   }
 }
 

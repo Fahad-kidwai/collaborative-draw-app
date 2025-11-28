@@ -1,20 +1,68 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@repo/ui/card";
 import { Button } from "@repo/ui/button";
-import { Mail, Lock, User, ArrowRight, LogIn, UserPlus } from "lucide-react";
+import { Mail, Lock, User, ArrowRight, LogIn, UserPlus, Loader2, AlertCircle } from "lucide-react";
 import Link from "next/link";
+import { signup, signin, storeToken } from "@/lib/api";
 
 export function AuthPage({ isSignin }: { isSignin: boolean }) {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission here
-    console.log({ email, password, name: isSignin ? undefined : name });
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      if (isSignin) {
+        // Sign in
+        const response = await signin({
+          username: email,
+          password,
+        });
+        
+        // Store token
+        storeToken(response.token);
+        
+        // Redirect to home or dashboard
+        router.push("/");
+      } else {
+        // Sign up
+        await signup({
+          username: email,
+          name,
+          password,
+        });
+        
+        // After successful signup, automatically sign in
+        try {
+          const signinResponse = await signin({
+            username: email,
+            password,
+          });
+          
+          storeToken(signinResponse.token);
+          router.push("/");
+        } catch {
+          // If auto signin fails, redirect to signin page
+          router.push("/signin");
+        }
+      }
+    } catch (err) {
+      // Handle error
+      const errorMessage = err instanceof Error ? err.message : "An unexpected error occurred";
+      setError(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -45,6 +93,13 @@ export function AuthPage({ isSignin }: { isSignin: boolean }) {
           </CardHeader>
           
           <CardContent>
+            {error && (
+              <div className="mb-4 p-3 rounded-lg bg-destructive/10 border border-destructive/20 flex items-center gap-2 text-destructive text-sm">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-4">
               {!isSignin && (
                 <div className="space-y-2">
@@ -60,9 +115,13 @@ export function AuthPage({ isSignin }: { isSignin: boolean }) {
                     type="text"
                     placeholder="John Doe"
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    onChange={(e) => {
+                      setName(e.target.value);
+                      setError(null);
+                    }}
                     required={!isSignin}
-                    className="w-full px-4 py-3 rounded-lg border-2 border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+                    disabled={isLoading}
+                    className="w-full px-4 py-3 rounded-lg border-2 border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                 </div>
               )}
@@ -80,9 +139,13 @@ export function AuthPage({ isSignin }: { isSignin: boolean }) {
                   type="email"
                   placeholder="you@example.com"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    setError(null);
+                  }}
                   required
-                  className="w-full px-4 py-3 rounded-lg border-2 border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+                  disabled={isLoading}
+                  className="w-full px-4 py-3 rounded-lg border-2 border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 />
               </div>
 
@@ -99,10 +162,14 @@ export function AuthPage({ isSignin }: { isSignin: boolean }) {
                   type="password"
                   placeholder="••••••••"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setError(null);
+                  }}
                   required
                   minLength={8}
-                  className="w-full px-4 py-3 rounded-lg border-2 border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+                  disabled={isLoading}
+                  className="w-full px-4 py-3 rounded-lg border-2 border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 />
                 {!isSignin && (
                   <p className="text-xs text-muted-foreground">
@@ -126,10 +193,20 @@ export function AuthPage({ isSignin }: { isSignin: boolean }) {
                 type="submit"
                 variant="primary"
                 size="lg"
-                className="w-full h-12 text-base font-semibold shadow-lg hover:shadow-xl transition-all"
+                disabled={isLoading}
+                className="w-full h-12 text-base font-semibold shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isSignin ? "Sign in" : "Create account"}
-                <ArrowRight className="ml-2 h-5 w-5" />
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    {isSignin ? "Signing in..." : "Creating account..."}
+                  </>
+                ) : (
+                  <>
+                    {isSignin ? "Sign in" : "Create account"}
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </>
+                )}
               </Button>
             </form>
 

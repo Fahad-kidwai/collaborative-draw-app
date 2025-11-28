@@ -4,10 +4,13 @@ import { prismaClient } from "@repo/db/client";
 import jwt from "jsonwebtoken";
 import { JWT_SECRET } from "@repo/backend-common/config";
 import { authMiddleware } from "./middleware";
+import cors from "cors";
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(express.json());
+app.use(cors())
 
 app.post("/signup", async (req, res) => {
   console.log(req.body);
