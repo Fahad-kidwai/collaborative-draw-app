@@ -1,83 +1,81 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+import { SignupRequest, SignupResponse, SigninRequest, SigninResponse, ApiError, Shape } from "@/types";
+import { API_BASE_URL } from "@/config";
+import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from "axios";
 
-export interface SignupRequest {
-  username: string;
-  name: string;
-  password: string;
-}
-
-export interface SigninRequest {
-  username: string;
-  password: string;
-}
-
-export interface SignupResponse {
-  userId: string;
-}
-
-export interface SigninResponse {
-  token: string;
-}
-
-export interface ApiError {
-  error?: string;
-  errors?: {
-    issues?: Array<{
-      path: string[];
-      message: string;
-    }>;
-  };
-}
+type Shapes = Shape[]
 
 /**
- * Makes an API request with proper error handling
+ * Create axios instance with base configuration
  */
-async function apiRequest<T>(
-  endpoint: string,
-  options: RequestInit = {}
-): Promise<T> {
-  const url = `${API_BASE_URL}${endpoint}`;
-  
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers,
-    },
-  });
+const apiClient: AxiosInstance = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    "Content-Type": "application/json",
+  },
+  timeout: 10000, // 10 seconds timeout
+});
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    const error: ApiError = data;
-    throw new Error(
-      error.error || 
-      error.errors?.issues?.[0]?.message || 
-      `Request failed with status ${response.status}`
-    );
+/**
+ * Request interceptor to automatically add auth token
+ */
+apiClient.interceptors.request.use(
+  (config: InternalAxiosRequestConfig) => {
+    const token = getToken();
+    if (token && config.headers) {
+      config.headers.Authorization = `${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
   }
+);
 
-  return data as T;
-}
+/**
+ * Response interceptor for centralized error handling
+ */
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error: AxiosError<ApiError>) => {
+    if (error.response) {
+      // Server responded with error status
+      const apiError = error.response.data;
+      const errorMessage =
+        apiError?.error ||
+        apiError?.errors?.issues?.[0]?.message ||
+        `Request failed with status ${error.response.status}`;
+      
+      // Handle specific status codes
+      if (error.response.status === 401) {
+        // Unauthorized - clear token
+        removeToken();
+      }
+      
+      return Promise.reject(new Error(errorMessage));
+    } else if (error.request) {
+      // Request was made but no response received
+      return Promise.reject(new Error("Network error: No response from server"));
+    } else {
+      // Something else happened
+      return Promise.reject(error);
+    }
+  }
+);
 
 /**
  * Sign up a new user
  */
 export async function signup(data: SignupRequest): Promise<SignupResponse> {
-  return apiRequest<SignupResponse>("/signup", {
-    method: "POST",
-    body: JSON.stringify(data),
-  });
+  const response = await apiClient.post<SignupResponse>("/signup", data);
+  return response.data;
 }
 
 /**
  * Sign in an existing user
  */
 export async function signin(data: SigninRequest): Promise<SigninResponse> {
-  return apiRequest<SigninResponse>("/signin", {
-    method: "POST",
-    body: JSON.stringify(data),
-  });
+  const response = await apiClient.post<SigninResponse>("/signin", data);
+  return response.data;
 }
 
 /**
@@ -107,4 +105,16 @@ export function removeToken(): void {
     localStorage.removeItem("auth_token");
   }
 }
+
+
+/**
+ * Get existing shapes for a room
+ */
+export async function getExistingShapes(roomId: string | number): Promise<Shapes> {
+  const response = await apiClient.get<{shapes: Shapes}>(`/shapes/${roomId}`);
+  return response.data.shapes;
+}
+
+
+
 
