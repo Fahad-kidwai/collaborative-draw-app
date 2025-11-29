@@ -1,3 +1,4 @@
+"use client"
 import { getToken } from "@/lib/api"
 import { WS_URL } from "@/lib/ws"
 import { useEffect, useState } from "react"
