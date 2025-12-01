@@ -44,7 +44,7 @@ export class Game {
     async init(){
         const shapes = await getExistingShapes(this.roomId);
         console.log(shapes)
-        // this.existingShapes
+        this.existingShapes = shapes;
         this.clearCanvas();
     }
 
@@ -71,6 +71,7 @@ export class Game {
 
     drawShape(shape: Shape){
         const type = shape.type;
+        console.log(type)
         switch(type){
             case 'rect':
                 this.ctx.strokeStyle = "rgb(255,255,255)";
@@ -81,6 +82,7 @@ export class Game {
                 this.ctx.arc(shape.centerX,shape.centerY,Math.abs(shape.radius),0,Math.PI*2)
                 this.ctx.stroke();
                 this.ctx.closePath();      
+                break
         }
     }
 

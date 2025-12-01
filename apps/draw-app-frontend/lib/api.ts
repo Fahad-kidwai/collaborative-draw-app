@@ -5,6 +5,16 @@ import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from "ax
 type Shapes = Shape[]
 
 /**
+ * Database shape object returned from the API
+ */
+interface DatabaseShape {
+  id: number;
+  roomId: number;
+  data: string; // JSON string that needs to be parsed
+  userId: string;
+}
+
+/**
  * Create axios instance with base configuration
  */
 const apiClient: AxiosInstance = axios.create({
@@ -111,8 +121,10 @@ export function removeToken(): void {
  * Get existing shapes for a room
  */
 export async function getExistingShapes(roomId: string | number): Promise<Shapes> {
-  const response = await apiClient.get<{shapes: Shapes}>(`/shapes/${roomId}`);
-  return response.data.shapes;
+  const response = await apiClient.get<{ shapes: DatabaseShape[] }>(`/shapes/${roomId}`);
+  console.log(response.data);
+  const parsedShapes = response.data.shapes.map((shape: DatabaseShape) => JSON.parse(shape.data) as Shape);
+    return parsedShapes;
 }
 
 
