@@ -71,7 +71,7 @@ export class Game {
 
     drawShape(shape: Shape){
         const type = shape.type;
-        console.log(type)
+        // console.log(type)
         switch(type){
             case 'rect':
                 this.ctx.strokeStyle = "rgb(255,255,255)";
@@ -83,6 +83,13 @@ export class Game {
                 this.ctx.stroke();
                 this.ctx.closePath();      
                 break
+            case 'pencil':
+                this.ctx.beginPath();
+                this.ctx.moveTo(shape.startX,shape.startY);
+                this.ctx.lineTo(shape.endX,shape.endY)
+                this.ctx.stroke()
+                this.ctx.closePath();    
+                break;
         }
     }
 
@@ -116,7 +123,16 @@ export class Game {
                 centerY: this.startY +radius,
                 radius,
             }
+        }else if(selectedTool === 'pencil'){
+            shape = {
+                type: 'pencil',
+                startX: this.startX,
+                startY: this.startY,
+                endX: e.clientX,
+                endY: e.clientY,
+            }
         }
+
         if(!shape) return;
 
         this.existingShapes.push(shape);
@@ -146,6 +162,12 @@ export class Game {
             this.ctx.arc(centerX, centerY, Math.abs(radius), 0, Math.PI * 2);
             this.ctx.stroke();
             this.ctx.closePath();                
+        }else if(selectedTool === 'pencil'){
+            this.ctx.beginPath();
+            this.ctx.moveTo(this.startX,this.startY);
+            this.ctx.lineTo(e.clientX,e.clientY)
+            this.ctx.stroke()
+            this.ctx.closePath();
         }
         
     }
