@@ -50,7 +50,7 @@ app.post("/signin", async (req, res) => {
       res.status(403).json({ error: "Not authorized" });
       return;
     }
-    const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '1h' });
+    const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '30d' });
     res.status(201).json({ token });
   } catch (error) {
     res.status(500).json({ error: "Internal server error" });
