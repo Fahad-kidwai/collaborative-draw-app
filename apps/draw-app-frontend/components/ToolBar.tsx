@@ -1,7 +1,7 @@
-import { Circle, Pencil, RectangleHorizontalIcon } from "lucide-react"
+import { Circle, Eraser, Pencil, RectangleHorizontalIcon } from "lucide-react"
 import { IconButton } from "./IconButton"
 
-type Tool = "circle" | "rect" | "pencil"
+type Tool = "circle" | "rect" | "pencil"|"erase"
 
 export function ToolBar({selectedTool, setSelectedTool}: {
     selectedTool: Tool,
@@ -26,6 +26,9 @@ export function ToolBar({selectedTool, setSelectedTool}: {
                 <IconButton onClick={() => {
                     setSelectedTool("circle")
                 }} activated={selectedTool === "circle"} icon={<Circle />}></IconButton>
+                <IconButton onClick={() => {
+                    setSelectedTool("erase")
+                }} activated={selectedTool === "erase"} icon={<Eraser />}></IconButton>
             </div>
         </div>
 }        

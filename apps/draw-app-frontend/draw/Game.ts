@@ -1,5 +1,6 @@
 import { getExistingShapes } from "@/lib/api";
 import { Shape, Tool } from "@/types";
+import { parse } from "path";
 
 // import { Shape } from "@repo/common/types";
 
@@ -56,6 +57,11 @@ export class Game {
                 this.existingShapes.push(parsedShape)
                 this.clearCanvas();
             }
+            else if(message.type === 'erase'){
+                const parsedShape = JSON.parse(message.data)
+                this.existingShapes = this.existingShapes.filter(shape=> JSON.stringify(shape) !== JSON.stringify(parsedShape));
+                this.clearCanvas();
+            }
         }
     }
 
@@ -92,6 +98,23 @@ export class Game {
         this.ctx.stroke();
     }
 
+    erase(x:number,y:number){
+        const shapeIndex = this.existingShapes.findIndex(shape=>this.isPointInShape(x,y,shape));
+        if(shapeIndex !== -1){
+            const erasedShape = this.existingShapes[shapeIndex];
+            this.existingShapes.splice(shapeIndex,1);
+            this.clearCanvas()
+
+            this.socket.send(JSON.stringify({
+                type: 'erase',
+                shape: JSON.stringify(erasedShape),
+                roomId: this.roomId,
+            }))
+
+        }
+
+    }    
+
     drawShape(shape: Shape){
         const type = shape.type;
         switch(type){
@@ -107,6 +130,37 @@ export class Game {
         }
     }
 
+    isPointInShape(x: number, y: number, shape: Shape): boolean {
+        const tolerance = 5; 
+
+        if (shape.type === "rect") {
+            const startX = Math.min(shape.x, shape.x + shape.width);
+            const endX = Math.max(shape.x, shape.x + shape.width);
+            const startY = Math.min(shape.y, shape.y + shape.height);
+            const endY = Math.max(shape.y, shape.y + shape.height);
+
+            return (
+                x >= startX - tolerance &&
+                x <= endX + tolerance &&
+                y >= startY - tolerance &&
+                y <= endY + tolerance
+            );
+        }else if(shape.type === "circle"){
+            const dx = x - shape.centerX;
+            const dy = y - shape.centerY;
+            const normalized =
+                (dx * dx) / Math.pow(shape.radius + tolerance, 2) +
+                (dy * dy) / Math.pow(shape.radius + tolerance, 2);
+            
+            return normalized <= 1;
+        }else if (shape.type === "pencil") {
+            return shape.points.some(
+                (point) => Math.hypot(point.x - x, point.y - y) <= tolerance
+            );
+
+        }else return false;
+    }
+
     mouseDownHandler = (e:MouseEvent)=>{
         this.clicked = true;
         this.startX = e.clientX;
@@ -117,6 +171,9 @@ export class Game {
                 type: 'pencil',
                 points: [{x:this.startX,y:this.startY}]
             })    
+        }
+        else if (this.selectedTool === "erase") {
+            this.erase(this.startX  , this.startY);
         }
 
     }
@@ -196,6 +253,9 @@ export class Game {
                 currentShape.points.push({ x: e.clientX, y: e.clientY })
                 this.drawPencil(currentShape);
             }
+        }
+        else if(selectedTool === "erase"){
+            this.erase(e.clientX, e.clientY);
         }
         
     }
