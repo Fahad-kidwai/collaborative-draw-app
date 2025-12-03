@@ -44,8 +44,5 @@ export type Shape =
     }
   | {
       type: "pencil";
-      startX: number;
-      startY: number;
-      endX: number;
-      endY: number;
+      points: Array<{ x: number; y: number }>;
     };

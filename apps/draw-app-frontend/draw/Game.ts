@@ -69,26 +69,40 @@ export class Game {
         });    
     }    
 
+    drawRect(shape: Extract<Shape, { type: 'rect' }>){
+        this.ctx.strokeStyle = "rgb(255,255,255)";
+        this.ctx.strokeRect(shape.x, shape.y, shape.width, shape.height);
+    }
+
+    drawCircle(shape: Extract<Shape, { type: 'circle' }>){
+        this.ctx.beginPath();
+        this.ctx.arc(shape.centerX, shape.centerY, Math.abs(shape.radius), 0, Math.PI * 2);
+        this.ctx.stroke();
+        this.ctx.closePath();
+    }
+
+    drawPencil(shape: Extract<Shape, { type: 'pencil' }>){
+        const points = shape.points;
+        if(points.length === 0) return;
+        this.ctx.beginPath();
+        this.ctx.moveTo(points[0].x, points[0].y);
+        points.forEach(point => {
+            this.ctx.lineTo(point.x, point.y);
+        });
+        this.ctx.stroke();
+    }
+
     drawShape(shape: Shape){
         const type = shape.type;
-        // console.log(type)
         switch(type){
             case 'rect':
-                this.ctx.strokeStyle = "rgb(255,255,255)";
-                this.ctx.strokeRect(shape.x,shape.y,shape.width,shape.height);
+                this.drawRect(shape);
                 break;
             case 'circle':
-                this.ctx.beginPath();
-                this.ctx.arc(shape.centerX,shape.centerY,Math.abs(shape.radius),0,Math.PI*2)
-                this.ctx.stroke();
-                this.ctx.closePath();      
-                break
+                this.drawCircle(shape);
+                break;
             case 'pencil':
-                this.ctx.beginPath();
-                this.ctx.moveTo(shape.startX,shape.startY);
-                this.ctx.lineTo(shape.endX,shape.endY)
-                this.ctx.stroke()
-                this.ctx.closePath();    
+                this.drawPencil(shape);
                 break;
         }
     }
@@ -97,6 +111,14 @@ export class Game {
         this.clicked = true;
         this.startX = e.clientX;
         this.startY = e.clientY;
+
+        if(this.selectedTool === 'pencil'){
+            this.existingShapes.push({
+                type: 'pencil',
+                points: [{x:this.startX,y:this.startY}]
+            })    
+        }
+
     }
 
     mouseUpHandler = (e:MouseEvent)=>{
@@ -124,12 +146,12 @@ export class Game {
                 radius,
             }
         }else if(selectedTool === 'pencil'){
-            shape = {
-                type: 'pencil',
-                startX: this.startX,
-                startY: this.startY,
-                endX: e.clientX,
-                endY: e.clientY,
+            const currentShape:Shape = this.existingShapes[this.existingShapes.length - 1]
+            if(currentShape.type === 'pencil'){
+                shape = {
+                    type: 'pencil',
+                    points: currentShape.points,
+                }
             }
         }
 
@@ -153,21 +175,27 @@ export class Game {
         const selectedTool = this.selectedTool;
         console.log(selectedTool)
         if (selectedTool === "rect") {
-            this.ctx.strokeRect(this.startX, this.startY, width, height);   
+            this.drawRect({
+                type: 'rect',
+                x: this.startX,
+                y: this.startY,
+                width,
+                height,
+            });   
         } else if (selectedTool === "circle") {
             const radius = Math.max(width, height) / 2;
-            const centerX = this.startX + radius;
-            const centerY = this.startY + radius;
-            this.ctx.beginPath();
-            this.ctx.arc(centerX, centerY, Math.abs(radius), 0, Math.PI * 2);
-            this.ctx.stroke();
-            this.ctx.closePath();                
+            this.drawCircle({
+                type: 'circle',
+                centerX: this.startX + radius,
+                centerY: this.startY + radius,
+                radius,
+            });                
         }else if(selectedTool === 'pencil'){
-            this.ctx.beginPath();
-            this.ctx.moveTo(this.startX,this.startY);
-            this.ctx.lineTo(e.clientX,e.clientY)
-            this.ctx.stroke()
-            this.ctx.closePath();
+            const currentShape:Shape = this.existingShapes[this.existingShapes.length - 1]
+            if(currentShape.type === 'pencil'){
+                currentShape.points.push({ x: e.clientX, y: e.clientY })
+                this.drawPencil(currentShape);
+            }
         }
         
     }
