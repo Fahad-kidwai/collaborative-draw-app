@@ -95,19 +95,23 @@ wss.on("connection", (ws,request) => {
             const roomId = parsedData.roomId;
             const data = parsedData.shape;
 
-            await prismaClient.shape.delete({
-                where: { id: data.id }
-            })
-
-            users.forEach(x=>{
-                if(x.rooms.includes(roomId)){
-                    x.ws.send(JSON.stringify({
-                        type: "erase",
-                        data,
-                        roomId
-                    }))
-                }
-            })
+           try {
+             await prismaClient.shape.deleteMany({
+                 where: { data,roomId: Number(roomId)  }
+             })
+ 
+             users.forEach(x=>{
+                 if(x.rooms.includes(roomId)){
+                     x.ws.send(JSON.stringify({
+                         type: "erase",
+                         data,
+                         roomId
+                     }))
+                 }
+             })
+           } catch (error) {
+            console.log(error,"Error erasing shape")
+           }
         }
 
     });
