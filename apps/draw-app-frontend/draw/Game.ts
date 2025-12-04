@@ -104,7 +104,7 @@ export class Game {
             const erasedShape = this.existingShapes[shapeIndex];
             this.existingShapes.splice(shapeIndex,1);
             this.clearCanvas()
-
+            console.log(erasedShape,erasedShape)
             this.socket.send(JSON.stringify({
                 type: 'erase',
                 shape: JSON.stringify(erasedShape),
