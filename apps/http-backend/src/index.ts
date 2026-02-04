@@ -97,6 +97,23 @@ app.get("/shapes/:roomId",authMiddleware, async (req,res)=>{
   }
 })
 
+app.get("/rooms", authMiddleware, async (req, res) => {
+  try {
+    const rooms = await prismaClient.room.findMany({
+      where: {
+        adminId: req.userId as string,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+    res.status(200).json({ rooms });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal server error", rooms: [] });
+  }
+});
+
 app.get("/room/:slug", async (req, res) => {
   const slug = req.params.slug;
   const room = await prismaClient.room.findFirst({

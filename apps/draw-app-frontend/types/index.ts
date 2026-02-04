@@ -28,6 +28,13 @@ export interface ApiError {
         }>;
     };
 }
+
+export interface Room {
+  id: number;
+  slug: string;
+  createdAt: string;
+  adminId: string;
+}
 export type Shape =
   | {
       type: "rect";

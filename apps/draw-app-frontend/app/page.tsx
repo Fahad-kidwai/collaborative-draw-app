@@ -2,8 +2,9 @@ import { Button } from "@repo/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@repo/ui/card";
 import { Pencil, Share2, Users2, Sparkles, Github, Download, Zap, Palette, Lock } from "lucide-react";
 import Link from "next/link";
+import { RedirectIfAuth } from "@/components/RedirectIfAuth";
 
-function App() {
+function LandingPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
@@ -246,4 +247,10 @@ function App() {
   );
 }
 
-export default App;
+export default function Page() {
+  return (
+    <RedirectIfAuth>
+      <LandingPage />
+    </RedirectIfAuth>
+  );
+}

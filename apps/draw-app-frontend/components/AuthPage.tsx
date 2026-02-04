@@ -31,9 +31,7 @@ export function AuthPage({ isSignin }: { isSignin: boolean }) {
         
         // Store token
         storeToken(response.token);
-        
-        // Redirect to home or dashboard
-        router.push("/");
+        router.push("/dashboard");
       } else {
         // Sign up
         await signup({
@@ -50,9 +48,8 @@ export function AuthPage({ isSignin }: { isSignin: boolean }) {
           });
           
           storeToken(signinResponse.token);
-          router.push("/");
+          router.push("/dashboard");
         } catch {
-          // If auto signin fails, redirect to signin page
           router.push("/signin");
         }
       }

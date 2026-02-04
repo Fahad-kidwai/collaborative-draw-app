@@ -1,4 +1,4 @@
-import { SignupRequest, SignupResponse, SigninRequest, SigninResponse, ApiError, Shape } from "@/types";
+import { SignupRequest, SignupResponse, SigninRequest, SigninResponse, ApiError, Shape, Room } from "@/types";
 import { API_BASE_URL } from "@/config";
 import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from "axios";
 
@@ -122,9 +122,18 @@ export function removeToken(): void {
  */
 export async function getExistingShapes(roomId: string | number): Promise<Shapes> {
   const response = await apiClient.get<{ shapes: DatabaseShape[] }>(`/shapes/${roomId}`);
-  console.log(response.data);
   const parsedShapes = response.data.shapes.map((shape: DatabaseShape) => JSON.parse(shape.data) as Shape);
-    return parsedShapes;
+  return parsedShapes;
+}
+
+export async function getRooms(): Promise<Room[]> {
+  const response = await apiClient.get<{ rooms: Room[] }>("/rooms");
+  return response.data.rooms;
+}
+
+export async function createRoom(name: string): Promise<{ roomId: number }> {
+  const response = await apiClient.post<{ roomId: number }>("/room", { name });
+  return response.data;
 }
 
 
