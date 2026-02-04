@@ -1,8 +1,5 @@
 import { getExistingShapes } from "@/lib/api";
 import { Shape, Tool } from "@/types";
-import { parse } from "path";
-
-// import { Shape } from "@repo/common/types";
 
 export class Game {
     private canvas: HTMLCanvasElement;
@@ -13,6 +10,12 @@ export class Game {
     private startX = 0;
     private startY = 0;
     private selectedTool: Tool = "pencil";
+    private panX = 0;
+    private panY = 0;
+    private panStartClientX = 0;
+    private panStartClientY = 0;
+    private panStartX = 0;
+    private panStartY = 0;
 
     socket:WebSocket;
 
@@ -65,14 +68,25 @@ export class Game {
         }
     }
 
+    private getWorldCoords(e: MouseEvent): { x: number; y: number } {
+        const rect = this.canvas.getBoundingClientRect();
+        return {
+            x: e.clientX - rect.left - this.panX,
+            y: e.clientY - rect.top - this.panY,
+        };
+    }
+
     clearCanvas(){
         this.ctx.clearRect(0,0,this.canvas.width, this.canvas.height);
         this.ctx.fillStyle = "rgb(0,0,0)";
         this.ctx.fillRect(0,0,this.canvas.width, this.canvas.height);
 
+        this.ctx.save();
+        this.ctx.translate(this.panX, this.panY);
         this.existingShapes.forEach(shape=>{
             this.drawShape(shape);
-        });    
+        });
+        this.ctx.restore();
     }    
 
     drawRect(shape: Extract<Shape, { type: 'rect' }>){
@@ -163,25 +177,41 @@ export class Game {
 
     mouseDownHandler = (e:MouseEvent)=>{
         this.clicked = true;
-        this.startX = e.clientX;
-        this.startY = e.clientY;
+
+        if (this.selectedTool === "pan") {
+            this.panStartClientX = e.clientX;
+            this.panStartClientY = e.clientY;
+            this.panStartX = this.panX;
+            this.panStartY = this.panY;
+            return;
+        }
+
+        const { x, y } = this.getWorldCoords(e);
+        this.startX = x;
+        this.startY = y;
 
         if(this.selectedTool === 'pencil'){
             this.existingShapes.push({
                 type: 'pencil',
-                points: [{x:this.startX,y:this.startY}]
+                points: [{ x: this.startX, y: this.startY }]
             })    
         }
         else if (this.selectedTool === "erase") {
-            this.erase(this.startX  , this.startY);
+            this.erase(this.startX, this.startY);
         }
 
     }
 
     mouseUpHandler = (e:MouseEvent)=>{
+        if (this.selectedTool === "pan") {
+            this.clicked = false;
+            return;
+        }
+
         this.clicked = false;
-        const width = e.clientX - this.startX;
-        const height = e.clientY - this.startY;
+        const { x: endX, y: endY } = this.getWorldCoords(e);
+        const width = endX - this.startX;
+        const height = endY - this.startY;
 
         const selectedTool = this.selectedTool;
         let shape:Shape|null = null;
@@ -225,12 +255,22 @@ export class Game {
 
     mouseMoveHandler = (e:MouseEvent)=> {
         if(!this.clicked) return;
-        const width = e.clientX - this.startX;
-        const height = e.clientY - this.startY;
+
+        if (this.selectedTool === "pan") {
+            this.panX = this.panStartX + (e.clientX - this.panStartClientX);
+            this.panY = this.panStartY + (e.clientY - this.panStartClientY);
+            this.clearCanvas();
+            return;
+        }
+
+        const { x: currentX, y: currentY } = this.getWorldCoords(e);
+        const width = currentX - this.startX;
+        const height = currentY - this.startY;
         this.clearCanvas();
+        this.ctx.save();
+        this.ctx.translate(this.panX, this.panY);
         this.ctx.strokeStyle = "rgba(255, 255, 255)"
         const selectedTool = this.selectedTool;
-        console.log(selectedTool)
         if (selectedTool === "rect") {
             this.drawRect({
                 type: 'rect',
@@ -250,14 +290,14 @@ export class Game {
         }else if(selectedTool === 'pencil'){
             const currentShape:Shape = this.existingShapes[this.existingShapes.length - 1]
             if(currentShape.type === 'pencil'){
-                currentShape.points.push({ x: e.clientX, y: e.clientY })
+                currentShape.points.push({ x: currentX, y: currentY })
                 this.drawPencil(currentShape);
             }
         }
         else if(selectedTool === "erase"){
-            this.erase(e.clientX, e.clientY);
+            this.erase(currentX, currentY);
         }
-        
+        this.ctx.restore();
     }
 
     initMouseHandlers(){

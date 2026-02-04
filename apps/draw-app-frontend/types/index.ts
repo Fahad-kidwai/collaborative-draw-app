@@ -1,4 +1,4 @@
-export type Tool = "circle" | "rect" | "pencil"|"erase";
+export type Tool = "circle" | "rect" | "pencil" | "erase" | "pan";
 
 export interface SignupRequest {
   username: string;

@@ -1,7 +1,7 @@
-import { Circle, Eraser, Pencil, RectangleHorizontalIcon } from "lucide-react";
+import { Circle, Eraser, Hand, Pencil, RectangleHorizontalIcon } from "lucide-react";
 import { IconButton } from "./IconButton";
 
-type Tool = "circle" | "rect" | "pencil" | "erase";
+type Tool = "circle" | "rect" | "pencil" | "erase" | "pan";
 
 export function ToolBar({
   selectedTool,
@@ -41,6 +41,13 @@ export function ToolBar({
           activated={selectedTool === "erase"}
           icon={<Eraser />}
         ></IconButton>
+        <IconButton
+          onClick={() => {
+            setSelectedTool("pan");
+          }}
+          activated={selectedTool === "pan"}
+          icon={<Hand />}
+        />
       </div>
     </div>
   );
